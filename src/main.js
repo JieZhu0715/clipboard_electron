@@ -1,12 +1,16 @@
-const electron = require('electron');
-const Menubar = require('menuBar');
+const {app, BrowserWindow, Tray} = require('electron')
 
-const menubar = Menubar();
+app.on("ready", () => {
+    let tray = new Tray();
+    let win = new BrowserWindow({width: 800, height: 600, frame: false});
 
-menubar.on('ready', function() {
-    console.log("menubar app is ready");
-});
+    // menubar.window.loadURL(`file://${__dirname}/index.html`);
+    const path = `file://${__dirname}/clipboard.html`;
+    win.on('close', function () { win = null })
+    win.loadURL(path);
 
-menubar.on('after-create-window', function () {
-    menubar.window.loadURL(`file://${__dirname}/index.html`);
+    // Menubar onclick event listener
+    tray.on('click', () => {
+      win.isVisible() ? win.hide() : win.show()
+    });
 });
