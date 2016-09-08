@@ -19,6 +19,7 @@ var ClipList = React.createClass({
                 <ClipItem item={item} />
             );
         });
+
         return (
             <div className="clipList">
                 {clipItems}
@@ -48,6 +49,13 @@ var Clipboard = React.createClass({
     }
 });
 
-ReactDom.render(
+document.addEventListener("keyup", (event) => {
+    let eventObj = event || window.event;
+    console.log("Key up: " + eventObj.keyCode);
+});
+
+let clipboard_component = ReactDom.render(
     <Clipboard />,
     document.getElementById('content'));
+
+module.exports = clipboard_component;

@@ -1,18 +1,45 @@
-const {app, BrowserWindow, nativeImage, Tray} = require('electron');
-const path = require('path');
+"use strict";
 
-app.on("ready", () => {
-    let image = nativeImage.createFromPath(path.join(__dirname, '../assets/status_bar_linux.png'));
-    let tray = new Tray(image);
-    let win = new BrowserWindow({width: 800, height: 600, frame: false});
+const {app} = require('electron');
+const log = require('electron-log');
 
-    // menubar.window.loadURL(`file://${__dirname}/index.html`);
-    const contentPath = `file://${__dirname}/clipboard.html`;
-    win.on('close', function () { win = null })
-    win.loadURL(contentPath);
+const TrayApp = require('./app/tray.js');
+const ClipboardWindow = require('./app/clipboard_window.js');
+const MenubarApp = require('./app/menubar.js');
 
-    // Menubar onclick event listener
-    tray.on('click', () => {
-      win.isVisible() ? win.hide() : win.show()
-    });
-});
+class ClipboardApp {
+    constructor()
+    {
+        this.clipboardWindow = null;
+        this.tray = null;
+        this.menubar = null;
+    }
+
+    start()
+    {
+        log.info("Starting...");
+        this._initApp();
+        this._initIPC();
+    }
+
+    _initApp()
+    {
+        // app.on("ready", () =>
+        // {
+        //     this.clipboardWindow = new ClipboardWindow();
+        //     this.tray = new TrayApp(this.clipboardWindow);
+        // });
+
+        log.info("initilizing menubar...");
+        this.menubar = new MenubarApp();
+
+    }
+
+    _initIPC()
+    {
+        // Talking between processes
+    }
+}
+
+// Start the app
+new ClipboardApp().start();
