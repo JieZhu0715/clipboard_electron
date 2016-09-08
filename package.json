@@ -1,0 +1,35 @@
+{
+  "name": "clipboard_electron",
+  "version": "1.0.0",
+  "description": "clipboard implemetation by Electron",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron src/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack -d --watch",
+    "build" : "webpack -p"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JieZhu0715/clipboard_electron.git"
+  },
+  "keywords": [
+    "clipboard"
+  ],
+  "author": "jzhu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JieZhu0715/clipboard_electron/issues"
+  },
+  "homepage": "https://github.com/JieZhu0715/clipboard_electron#readme",
+  "dependencies": {
+    "babel-loader": "^6.2.5",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-react": "^6.11.1",
+    "electron": "^1.3.5",
+    "menubar": "^5.1.0",
+    "react": "^15.3.1",
+    "react-dom": "^15.3.1",
+    "webpack": "^1.13.2"
+  }
+}
