@@ -3,7 +3,7 @@
 const {app, BrowserWindow, nativeImage, Tray} = require('electron');
 const path = require('path');
 
-class TrayApp {
+class TrayWindow {
     constructor(clipboardWindow)
     {
         this.clipboardWindow = clipboardWindow;
@@ -21,11 +21,6 @@ class TrayApp {
             this.clipboardWindow.pop();
         });
     }
-
-    _registerHotKeys()
-    {
-
-    }
 }
 
-module.exports = TrayApp;
+module.exports = TrayWindow;

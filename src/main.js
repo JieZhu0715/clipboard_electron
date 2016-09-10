@@ -1,9 +1,9 @@
 "use strict";
 
-const {app} = require('electron');
+const {app, clipboard} = require('electron');
 const log = require('electron-log');
 
-const TrayApp = require('./app/tray.js');
+const TrayWindow = require('./app/tray.js');
 const ClipboardWindow = require('./app/clipboard_window.js');
 const MenubarApp = require('./app/menubar.js');
 
@@ -13,6 +13,9 @@ class ClipboardApp {
         this.clipboardWindow = null;
         this.tray = null;
         this.menubar = null;
+        this.menubarWin = null;
+
+        this.lastClip = null;       
     }
 
     start()
@@ -20,24 +23,42 @@ class ClipboardApp {
         log.info("Starting...");
         this._initApp();
         this._initIPC();
+        
+        this._watchSystemClipboard();
     }
 
     _initApp()
     {
-        // app.on("ready", () =>
-        // {
-        //     this.clipboardWindow = new ClipboardWindow();
-        //     this.tray = new TrayApp(this.clipboardWindow);
-        // });
+        // log.info("initilizing meubar...");
+        // this.menubar = new MenubarApp();
+        // // this.menubarWin = this.menubar.getWindow();
+        // this.menubarWin = this.menubar.getWindow();
+        // log.info("menubarWin" + this.menubarWin);
 
-        log.info("initilizing menubar...");
-        this.menubar = new MenubarApp();
-
+        app.on('ready', () => {
+            this.clipboardWindow = new ClipboardWindow();
+            this.trayWindow = new TrayWindow(this.clipboardWindow);
+        });
     }
 
     _initIPC()
     {
         // Talking between processes
+    }
+
+    _watchSystemClipboard() 
+    {   
+        setInterval(() => {
+            let message = clipboard.readText();
+            if (!this.lastClip || (message && message != this.lastClip)) 
+            {   
+                log.info('New clipboard message: ' + message);    
+                // this.clipboardWindow.send('add-to-clipboard', message, 'message');
+                // Update last clip
+                this.clipboardWindow.send('add-to-clipboard', message);
+                this.lastClip = message;            
+            }
+        }, 500);
     }
 }
 

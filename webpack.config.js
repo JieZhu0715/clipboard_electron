@@ -9,13 +9,14 @@ var config = {
     clipboard: APP_DIR + '/clipboard.js',
     test: APP_DIR + "/test.js"
   },
+
   output: {
     path: BUILD_DIR,
     filename: '[name]_bundle.js'
   },
 
-   module: {
-    loaders: [
+  module: {
+     loaders: [
       {
         test: /\.jsx?/,
         include: APP_DIR,

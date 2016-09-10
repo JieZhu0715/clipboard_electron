@@ -3,8 +3,6 @@ const electron = require('electron');
 const BrowserWindow = electron.BrowserWindow;
 const clipboard = electron.clipboard;
 
-// const clipboard_component = require('../public/clipboard_bundle.js');
-
 class ClipboardWindow {
     constructor()
     {
@@ -31,32 +29,9 @@ class ClipboardWindow {
         this.win.loadURL(contentPath);
     }
 
-    copyto()
+    send(channel, ...message) 
     {
-        clipboard_component.add("test");
-    }
-
-    pastefrom()
-    {
-        console.log("paste");
-    }
-
-    // Delegate isVisible function
-    isVisible()
-    {
-        return this.win.isVisible();
-    }
-
-    // Delegate show function
-    show()
-    {
-        return this.win.show();
-    }
-
-    // Delegate hide function
-    hide()
-    {
-        return this.win.hide();
+        this.win.send(channel, message);
     }
 
     pop()
