@@ -51,14 +51,27 @@
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	var _reactDom = __webpack_require__(/*! react-dom */ 34);
+	
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+	
+	var _searchbar = __webpack_require__(/*! ./searchbar.js */ 172);
+	
+	var _searchbar2 = _interopRequireDefault(_searchbar);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var React = __webpack_require__(/*! react */ 1);
-	var ReactDom = __webpack_require__(/*! react-dom */ 34);
+	var log = electronRequire('electron-log');
 	
 	var ClipItem = function (_React$Component) {
 	    _inherits(ClipItem, _React$Component);
@@ -70,13 +83,13 @@
 	    }
 	
 	    _createClass(ClipItem, [{
-	        key: "render",
+	        key: 'render',
 	        value: function render() {
-	            return React.createElement(
-	                "div",
-	                { className: "clipItem" },
-	                React.createElement(
-	                    "h3",
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'clipItem' },
+	                _react2.default.createElement(
+	                    'h3',
 	                    null,
 	                    this.props.item
 	                )
@@ -85,7 +98,7 @@
 	    }]);
 	
 	    return ClipItem;
-	}(React.Component);
+	}(_react2.default.Component);
 	
 	var ClipList = function (_React$Component2) {
 	    _inherits(ClipList, _React$Component2);
@@ -97,22 +110,22 @@
 	    }
 	
 	    _createClass(ClipList, [{
-	        key: "render",
+	        key: 'render',
 	        value: function render() {
 	            var clipItems = this.props.data.map(function (item) {
-	                return React.createElement(ClipItem, { key: item.id, item: item.text });
+	                return _react2.default.createElement(ClipItem, { key: item.index, item: item.text });
 	            });
 	
-	            return React.createElement(
-	                "div",
-	                { className: "clipList" },
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'clipList' },
 	                clipItems
 	            );
 	        }
 	    }]);
 	
 	    return ClipList;
-	}(React.Component);
+	}(_react2.default.Component);
 	
 	;
 	
@@ -124,64 +137,83 @@
 	
 	        var _this3 = _possibleConstructorReturn(this, (Clipboard.__proto__ || Object.getPrototypeOf(Clipboard)).call(this));
 	
-	        _this3.state = { data: [], count: 0 };
+	        _this3.state = { data: [], searchText: '' };
 	        // React not autobinding in ES6       
 	        // manually binding
 	        _this3.add = _this3.add.bind(_this3);
+	        _this3.handleChange = _this3.handleChange.bind(_this3);
+	
 	        _this3._listenAddMessage();
 	        return _this3;
 	    }
 	
 	    _createClass(Clipboard, [{
-	        key: "add",
+	        key: 'add',
 	        value: function add(newText) {
 	            // Add a new item to top
-	            var count = this.state.data.count;
-	            var newItem = { id: count, text: newText };
+	            var newItem = { index: this.state.data.length, text: newText };
 	            var stateData = this.state.data;
 	            stateData.unshift(newItem);
-	            this.setState({ data: stateData, count: count + 1 });
+	            this.setState({ data: stateData, searchText: '' });
+	        }
+	    }, {
+	        key: 'handleChange',
+	        value: function handleChange(event) {
+	            log.info('handleChange function get triggered');
+	            var searchText = event.target.value;
+	            this.setState({ data: this.state.data, searchText: event.target.value });
 	        }
 	
 	        // Overridden
 	
 	    }, {
-	        key: "render",
+	        key: 'render',
 	        value: function render() {
-	            return React.createElement(
-	                "div",
-	                { className: "clipboard" },
-	                React.createElement(ClipList, { data: this.state.data })
+	            var stateData = this.state.data;
+	            var searchString = this.state.searchText.trim().toLowerCase();
+	
+	            if (searchString.length > 0) {
+	                stateData = stateData.filter(function (item) {
+	                    return item.text.toLowerCase().includes(searchString);
+	                });
+	            }
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'clipboard' },
+	                _react2.default.createElement(_searchbar2.default, { onChange: this.handleChange }),
+	                _react2.default.createElement(ClipList, { data: stateData })
 	            );
 	        }
 	
-	        // Overridden
+	        // Overridden 
+	        // TODO get history items from file
 	
 	    }, {
-	        key: "componentDidMount",
+	        key: 'componentDidMount',
 	        value: function componentDidMount() {
 	            console.log("Component did mount");
 	        }
 	    }, {
-	        key: "_listenAddMessage",
+	        key: '_listenAddMessage',
 	        value: function _listenAddMessage() {
 	            var _this4 = this;
 	
 	            var ipc = electronRequire('electron').ipcRenderer;
-	            var log = electronRequire('electron-log');
-	            ipc.on('add-to-clipboard', function (event, arg) {
-	                log.info('Receive message from main process: ' + arg);
-	                _this4.add(arg);
+	            ipc.on('add-to-clipboard', function (event, args) {
+	                log.info('Receive message from main process: ' + args);
+	                if (args.length > 0) {
+	                    _this4.add(args[0]);
+	                }
 	            });
 	        }
 	    }]);
 	
 	    return Clipboard;
-	}(React.Component);
+	}(_react2.default.Component);
 	
 	;
 	
-	ReactDom.render(React.createElement(Clipboard, null), document.getElementById('content'));
+	_reactDom2.default.render(_react2.default.createElement(Clipboard, null), document.getElementById('content'));
 
 /***/ },
 /* 1 */
@@ -22066,6 +22098,58 @@
 	
 	module.exports = ReactDOMNullInputValuePropHook;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./~/process/browser.js */ 3)))
+
+/***/ },
+/* 172 */
+/*!********************************!*\
+  !*** ./src/react/searchbar.js ***!
+  \********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _react = __webpack_require__(/*! react */ 1);
+	
+	var _react2 = _interopRequireDefault(_react);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var SearchBar = function (_React$Component) {
+		_inherits(SearchBar, _React$Component);
+	
+		function SearchBar() {
+			_classCallCheck(this, SearchBar);
+	
+			return _possibleConstructorReturn(this, (SearchBar.__proto__ || Object.getPrototypeOf(SearchBar)).apply(this, arguments));
+		}
+	
+		_createClass(SearchBar, [{
+			key: 'render',
+			value: function render() {
+				return _react2.default.createElement(
+					'div',
+					{ className: 'searchbar' },
+					_react2.default.createElement('input', { type: 'text', onChange: this.props.onChange })
+				);
+			}
+		}]);
+	
+		return SearchBar;
+	}(_react2.default.Component);
+	
+	exports.default = SearchBar;
 
 /***/ }
 /******/ ]);
