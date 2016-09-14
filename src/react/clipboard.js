@@ -2,7 +2,10 @@
 import React from 'react';
 import ReactDom from 'react-dom'
 import SearchBar from './searchbar.js';
-let log = electronRequire('electron-log');
+
+const log = electronRequire('electron-log');
+const CommonStack = electronRequire('./common/CommonStack.js');
+
 
 class ClipItem extends React.Component 
 {
@@ -34,12 +37,14 @@ class ClipList extends React.Component
     }
 };
 
+const MAX_SHOW_SIZE = 10; // we just display 10 in the view
+
 class Clipboard extends React.Component
 {
-    constructor() 
+    constructor()
     {   
         super();
-        this.state = {data: [], searchText: ''};
+        this.state = {data: new CommonStack(), searchText: '', startIndex: 0, size: 0};
         // React not autobinding in ES6       
         // manually binding
         this.add = this.add.bind(this);
@@ -48,30 +53,46 @@ class Clipboard extends React.Component
         this._listenAddMessage();
     }
 
+    static MAX_SHOW_SIZE()
+    {
+        return MAX_SHOW_SIZE;
+    }
+
     add(newText) 
     {
         // Add a new item to top
-        var newItem = {index: this.state.data.length, text: newText};
+        var newItem = {index: this.state.data.getSize(), text: newText};
         let stateData = this.state.data;
-        stateData.unshift(newItem);
-        this.setState({data: stateData, searchText: ''});
+        // stateData.unshift(newItem);
+        stateData.push(newItem)
+        this.setState({data: stateData, searchText: '', startIndex: this.state.startIndex, size: this.state.size + 1});
     }
 
+    // handles search event
     handleChange(event) 
     {
         log.info('handleChange function get triggered');
-        var searchText = event.target.value;
-        this.setState({data: this.state.data, searchText: event.target.value})
+        let searchText = event.target.value;
+        this.setState({data: this.state.data, searchText: searchText, startIndex: this.state.startIndex, size: this.state.size});
     }
 
     // Overridden
     render() {
         let stateData = this.state.data;
         let searchString = this.state.searchText.trim().toLowerCase();
+        let startIndex = this.state.startIndex;
+        let selected = [];
 
-        if (searchString.length > 0) 
+        if (searchString.length == 0)
         {
-            stateData = stateData.filter((item) => 
+            selected = stateData.getArray().filter((item) =>
+            {
+                return item.index >= startIndex && item.index < startIndex + Clipboard.MAX_SHOW_SIZE;
+            });
+        }
+        else
+        {
+            selected = stateData.getArray().filter((item) =>
             {
                 return item.text.toLowerCase().includes(searchString);
             });
@@ -79,7 +100,7 @@ class Clipboard extends React.Component
         return (
             <div className="clipboard">
                 <SearchBar onChange={this.handleChange}/>
-                <ClipList data={stateData} />
+                <ClipList data={selected} />
             </div>
         );
     }

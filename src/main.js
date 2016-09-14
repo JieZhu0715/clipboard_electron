@@ -7,7 +7,8 @@ const TrayWindow = require('./app/tray.js');
 const ClipboardWindow = require('./app/clipboard_window.js');
 const MenubarApp = require('./app/menubar.js');
 
-class ClipboardApp {
+class ClipboardApp
+{
     constructor()
     {
         this.clipboardWindow = null;
