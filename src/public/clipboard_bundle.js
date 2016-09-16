@@ -92,7 +92,9 @@
 	                _react2.default.createElement(
 	                    'h3',
 	                    null,
-	                    this.props.item
+	                    this.props.focus,
+	                    ' : ',
+	                    this.props.text
 	                )
 	            );
 	        }
@@ -104,17 +106,25 @@
 	var ClipList = function (_React$Component2) {
 	    _inherits(ClipList, _React$Component2);
 	
-	    function ClipList() {
+	    function ClipList(props) {
 	        _classCallCheck(this, ClipList);
 	
-	        return _possibleConstructorReturn(this, (ClipList.__proto__ || Object.getPrototypeOf(ClipList)).apply(this, arguments));
+	        var _this2 = _possibleConstructorReturn(this, (ClipList.__proto__ || Object.getPrototypeOf(ClipList)).call(this, props));
+	
+	        var length = _this2.props.data.length;
+	        _this2.state = { focusedOn: 0, actualSize: length };
+	        _this2._handleKeypress = _this2._handleKeypress.bind(_this2);
+	        return _this2;
 	    }
 	
 	    _createClass(ClipList, [{
 	        key: 'render',
 	        value: function render() {
-	            var clipItems = this.props.data.map(function (item) {
-	                return _react2.default.createElement(ClipItem, { key: item.index, item: item.text });
+	            var data = this.props.data;
+	            var focusedOn = this.state.focusedOn;
+	            var clipItems = data.map(function (item) {
+	                var index = data.indexOf(item);
+	                return _react2.default.createElement(ClipItem, { key: item.index, text: item.text, focus: focusedOn == index });
 	            });
 	
 	            return _react2.default.createElement(
@@ -123,14 +133,56 @@
 	                clipItems
 	            );
 	        }
+	
+	        // Overridden
+	        // TODO get history items from file
+	
+	    }, {
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            console.log("Component did mount");
+	            window.addEventListener("keydown", this._handleKeypress);
+	        }
+	    }, {
+	        key: 'componentWillUnmount',
+	        value: function componentWillUnmount() {
+	            console.log("Component will unmount");
+	            window.removeEventListener("keydown", this._handleKeypress);
+	        }
+	    }, {
+	        key: '_handleKeypress',
+	        value: function _handleKeypress(event) {
+	            console.log("handle key press event.");
+	            var focusedOn = this.state.focusedOn;
+	            var actualSize = this.state.actualSize;
+	
+	            var x = event.which || event.keyCode;
+	            if (x == 38) // up
+	                {
+	                    console.log("Up key pressed");
+	                    if (focusedOn == 0) {
+	                        this.props.shift(true);
+	                    } else {
+	                        focusedOn = focusedOn - 1;
+	                        this.setState({ focusedOn: focusedOn, actualSize: this.state.actualSize });
+	                    }
+	                } else if (x == 40) // down
+	                {
+	                    console.log("Down key pressed");
+	                    if (focusedOn == actualSize - 1) {
+	                        this.props.shift(false);
+	                    } else {
+	                        focusedOn = focusedOn + 1;
+	                        this.setState({ focusedOn: focusedOn, actualSize: this.state.actualSize });
+	                    }
+	                }
+	        }
 	    }]);
 	
 	    return ClipList;
 	}(_react2.default.Component);
 	
-	;
-	
-	var _MAX_SHOW_SIZE = 10; // we just display 10 in the view
+	var MAX_SHOW_SIZE = 10; // we just display 10 in the view
 	
 	var Clipboard = function (_React$Component3) {
 	    _inherits(Clipboard, _React$Component3);
@@ -140,12 +192,12 @@
 	
 	        var _this3 = _possibleConstructorReturn(this, (Clipboard.__proto__ || Object.getPrototypeOf(Clipboard)).call(this));
 	
-	        _this3.state = { data: new CommonStack(), searchText: '', startIndex: 0, size: 0 };
+	        _this3.state = { data: new CommonStack(), searchText: '', startIndex: 0 };
 	        // React not autobinding in ES6       
 	        // manually binding
 	        _this3.add = _this3.add.bind(_this3);
 	        _this3.handleChange = _this3.handleChange.bind(_this3);
-	
+	        _this3.shift = _this3.shift.bind(_this3);
 	        _this3._listenAddMessage();
 	        return _this3;
 	    }
@@ -154,11 +206,17 @@
 	        key: 'add',
 	        value: function add(newText) {
 	            // Add a new item to top
-	            var newItem = { index: this.state.data.getSize(), text: newText };
+	            var size = this.state.data.getSize();
 	            var stateData = this.state.data;
-	            // stateData.unshift(newItem);
-	            stateData.push(newItem);
-	            this.setState({ data: stateData, searchText: '', startIndex: this.state.startIndex, size: this.state.size + 1 });
+	            stateData.push({ index: size, text: newText });
+	
+	            var startIndex = size - MAX_SHOW_SIZE;
+	
+	            this.setState({
+	                data: stateData,
+	                searchText: '',
+	                startIndex: startIndex < 0 ? 0 : startIndex
+	            });
 	        }
 	
 	        // handles search event
@@ -168,7 +226,7 @@
 	        value: function handleChange(event) {
 	            log.info('handleChange function get triggered');
 	            var searchText = event.target.value;
-	            this.setState({ data: this.state.data, searchText: searchText, startIndex: this.state.startIndex, size: this.state.size });
+	            this.setState({ data: this.state.data, searchText: searchText, startIndex: this.state.startIndex });
 	        }
 	
 	        // Overridden
@@ -179,32 +237,37 @@
 	            var stateData = this.state.data;
 	            var searchString = this.state.searchText.trim().toLowerCase();
 	            var startIndex = this.state.startIndex;
-	            var selected = [];
 	
+	            var selected = [];
 	            if (searchString.length == 0) {
 	                selected = stateData.getArray().filter(function (item) {
-	                    return item.index >= startIndex && item.index < startIndex + Clipboard.MAX_SHOW_SIZE;
+	                    return item.index >= startIndex && item.index < startIndex + MAX_SHOW_SIZE;
 	                });
 	            } else {
 	                selected = stateData.getArray().filter(function (item) {
 	                    return item.text.toLowerCase().includes(searchString);
-	                });
+	                }).slice(0, MAX_SHOW_SIZE);
 	            }
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'clipboard' },
 	                _react2.default.createElement(_searchbar2.default, { onChange: this.handleChange }),
-	                _react2.default.createElement(ClipList, { data: selected })
+	                _react2.default.createElement(ClipList, { data: selected, shift: this.shift })
 	            );
 	        }
-	
-	        // Overridden 
-	        // TODO get history items from file
-	
 	    }, {
-	        key: 'componentDidMount',
-	        value: function componentDidMount() {
-	            console.log("Component did mount");
+	        key: 'shift',
+	        value: function shift(up) {
+	            var startIndex = this.state.startIndex;
+	            if (up) //shift up
+	                {
+	                    startIndex = startIndex + 1;
+	                    this.setState({ data: this.state.data, searchText: this.state.searchText, startIndex: startIndex });
+	                } else // shift down
+	                {
+	                    startIndex = startIndex - 1;
+	                    this.setState({ data: this.state.data, searchText: this.state.searchText, startIndex: startIndex });
+	                }
 	        }
 	    }, {
 	        key: '_listenAddMessage',
@@ -218,11 +281,6 @@
 	                    _this4.add(args[0]);
 	                }
 	            });
-	        }
-	    }], [{
-	        key: 'MAX_SHOW_SIZE',
-	        value: function MAX_SHOW_SIZE() {
-	            return _MAX_SHOW_SIZE;
 	        }
 	    }]);
 	
