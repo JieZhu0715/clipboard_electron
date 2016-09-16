@@ -104,7 +104,7 @@ class Clipboard extends React.Component
     constructor()
     {   
         super();
-        this.state = {data: new CommonStack(), searchText: '', startIndex: 0};
+        this.state = {data: new CommonStack(), searchText: '', topIndex: -1};
         // React not autobinding in ES6       
         // manually binding
         this.add = this.add.bind(this);
@@ -120,12 +120,10 @@ class Clipboard extends React.Component
         let stateData = this.state.data;
         stateData.push({index: size, text: newText});
 
-        let startIndex = size - MAX_SHOW_SIZE;
-
         this.setState({
             data: stateData,
             searchText: '',
-            startIndex: startIndex < 0 ? 0 : startIndex
+            topIndex: size
         });
     }
 
@@ -134,21 +132,21 @@ class Clipboard extends React.Component
     {
         log.info('handleChange function get triggered');
         let searchText = event.target.value;
-        this.setState({data: this.state.data, searchText: searchText, startIndex: this.state.startIndex});
+        this.setState({data: this.state.data, searchText: searchText, topIndex: this.state.topIndex});
     }
 
     // Overridden
     render() {
         let stateData = this.state.data;
         let searchString = this.state.searchText.trim().toLowerCase();
-        let startIndex = this.state.startIndex;
+        let topIndex = this.state.topIndex;
 
         let selected = [];
         if (searchString.length == 0)
         {
             selected = stateData.getArray().filter((item) =>
             {
-                return item.index >= startIndex && item.index < (startIndex + MAX_SHOW_SIZE);
+                return item.index > topIndex - MAX_SHOW_SIZE && item.index < topIndex;
             });
         }
         else
@@ -168,16 +166,18 @@ class Clipboard extends React.Component
 
     shift(up)
     {
-        let startIndex = this.state.startIndex;
-        if (up) //shift up
+        let topIndex = this.state.topIndex;
+        let dataSize = this.state.data.getSize();
+        if (up && topIndex < dataSize - 1) //shift up
         {
-            startIndex = startIndex + 1;
-            this.setState({data: this.state.data, searchText: this.state.searchText, startIndex: startIndex});
+            topIndex = topIndex + 1;
+            this.setState({data: this.state.data, searchText: this.state.searchText, topIndex: topIndex});
         }
-        else // shift down
+
+        if (!up && topIndex > 0)// shift down
         {
-            startIndex = startIndex - 1;
-            this.setState({data: this.state.data, searchText: this.state.searchText, startIndex: startIndex});
+            topIndex = topIndex - 1;
+            this.setState({data: this.state.data, searchText: this.state.searchText, topIndex: topIndex});
         }
     }
 
