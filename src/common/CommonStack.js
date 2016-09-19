@@ -1,5 +1,6 @@
 class CommonStack {
-    constructor(maxSize) {
+    constructor(maxSize) 
+    {
         this.size = 0;
         this.array = [];
         this.maxSize = maxSize;
@@ -14,13 +15,20 @@ class CommonStack {
         }
     }
 
-    pushElementToTop(index) {
+    pushElementToTopByIndex(index) 
+    {
         if (index >= this.array.length) {
             console.log("Error array index: ", index);
         }
         let element = this.array[index];
         this.array = this.array.splice(index, 1);
         this.array.unshift(element);
+    }
+
+    pushElementToTopByElement(element) 
+    {
+        let index = this.array.indexOf(item);
+        this.pushElementToTop(index);
     }
 
     remove(index)

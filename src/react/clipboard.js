@@ -3,17 +3,19 @@ import React from 'react';
 import ReactDom from 'react-dom'
 import SearchBar from './searchbar.js';
 
+// React Bootstrap
+import {FormGroup, FormControl} from 'react-bootstrap';
+
 const log = electronRequire('electron-log');
 const CommonStack = electronRequire('./common/CommonStack.js');
 
-
-class ClipItem extends React.Component 
+class ClipItem extends React.Component
 {
     render() 
-    {
+    {   
         return (
             <div className="clipItem">
-                <h3>{this.props.focus} : {this.props.text}</h3>
+                <h3>{this.props.focused ? '==> ' : '    '} {this.props.text}</h3>
             </div>
         );
     }
@@ -24,8 +26,7 @@ class ClipList extends React.Component
     constructor(props)
     {
         super(props);
-        let length = this.props.data.length;
-        this.state = {focusedOn: 0, actualSize: length};
+        this.state = {focusedOn: 0};
         this._handleKeypress = this._handleKeypress.bind(this);
     }
 
@@ -33,10 +34,13 @@ class ClipList extends React.Component
     {
         let data = this.props.data;
         let focusedOn = this.state.focusedOn;
+        // focused index can not be out of scope 
+        // this should not happen though
+        focusedOn = focusedOn < 0 ? 0 : focusedOn < data.length ? focusedOn : data.length - 1;
         let clipItems = data.map(function(item) {
             let index = data.indexOf(item);
             return (
-                <ClipItem key={item.index} text={item.text} focus={focusedOn == index}/>
+                <ClipItem key={item.index} text={item.text} focused={focusedOn == index}/>
             );
         });
 
@@ -62,10 +66,9 @@ class ClipList extends React.Component
     }
 
     _handleKeypress(event)
-    {
-        console.log("handle key press event.");
+    {   
         let focusedOn = this.state.focusedOn;
-        let actualSize = this.state.actualSize;
+        let actualSize = this.props.data.length;
 
         let x = event.which || event.keyCode;
         if (x == 38) // up
@@ -73,12 +76,12 @@ class ClipList extends React.Component
             console.log("Up key pressed");
             if (focusedOn == 0)
             {
-                this.props.shift(true);
+                this.props.shift(true, actualSize);
             }
             else
             {
                 focusedOn = focusedOn - 1;
-                this.setState({focusedOn: focusedOn, actualSize: this.state.actualSize});
+                this.setState({focusedOn: focusedOn});
             }
         }
         else if (x == 40) // down
@@ -86,13 +89,21 @@ class ClipList extends React.Component
             console.log("Down key pressed")
             if (focusedOn == actualSize - 1)
             {
-                this.props.shift(false);
+                this.props.shift(false, actualSize);
             }
             else
             {
                 focusedOn = focusedOn + 1;
-                this.setState({focusedOn: focusedOn, actualSize: this.state.actualSize});
+                this.setState({focusedOn: focusedOn});
             }
+        } 
+        else if (x == 13) // Enter
+        {
+            console.log("Enter pressed");
+            let item = this.props.data[focusedOn];
+
+            let ipc = electronRequire('electron').ipcRenderer;
+            ipc.send('copy-clipboard-item', item);
         }
     }
 }
@@ -109,7 +120,7 @@ class Clipboard extends React.Component
         // manually binding
         this.add = this.add.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.shift = this.shift.bind(this);
+        // this.shift = this.shift.bind(this,); // Use lambda instead
         this._listenAddMessage();
     }
 
@@ -132,7 +143,7 @@ class Clipboard extends React.Component
     {
         log.info('handleChange function get triggered');
         let searchText = event.target.value;
-        this.setState({data: this.state.data, searchText: searchText, topIndex: this.state.topIndex});
+        this.setState({data: this.state.data, searchText: searchText, topIndex: this.state.data.getSize() - 1});
     }
 
     // Overridden
@@ -146,7 +157,7 @@ class Clipboard extends React.Component
         {
             selected = stateData.getArray().filter((item) =>
             {
-                return item.index > topIndex - MAX_SHOW_SIZE && item.index < topIndex;
+                return item.index > topIndex - MAX_SHOW_SIZE && item.index <= topIndex;
             });
         }
         else
@@ -154,31 +165,39 @@ class Clipboard extends React.Component
             selected = stateData.getArray().filter((item) =>
             {
                 return item.text.toLowerCase().includes(searchString);
-            }).slice(0, MAX_SHOW_SIZE);
+            });
+            // Slice MAX_SHOW_SIZE number item starting from top
+            selected = selected.slice(1 + topIndex - MAX_SHOW_SIZE, topIndex + 1);
         }
+        // shift function uses lambda to avoid binding
         return (
             <div className="clipboard">
                 <SearchBar onChange={this.handleChange}/>
-                <ClipList data={selected} shift={this.shift}/>
+                <ClipList data={selected} shift={(up, actualSize) => {this.shift(up, actualSize)}}/> 
             </div>
         );
     }
 
-    shift(up)
+    shift(up, actualSize)
     {
         let topIndex = this.state.topIndex;
         let dataSize = this.state.data.getSize();
         if (up && topIndex < dataSize - 1) //shift up
-        {
+        {   
             topIndex = topIndex + 1;
             this.setState({data: this.state.data, searchText: this.state.searchText, topIndex: topIndex});
         }
 
-        if (!up && topIndex > 0)// shift down
+        if (!up && topIndex >= actualSize)// shift down
         {
             topIndex = topIndex - 1;
             this.setState({data: this.state.data, searchText: this.state.searchText, topIndex: topIndex});
         }
+    }
+
+    push(item) 
+    { 
+        this.state.data.pushElementToTop(element); 
     }
 
     _listenAddMessage() 

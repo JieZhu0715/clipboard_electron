@@ -6,6 +6,7 @@ const log = require('electron-log');
 const TrayWindow = require('./app/tray.js');
 const ClipboardWindow = require('./app/clipboard_window.js');
 const MenubarApp = require('./app/menubar.js');
+const ipc = require('electron').ipcMain
 
 class ClipboardApp
 {
@@ -45,6 +46,14 @@ class ClipboardApp
     _initIPC()
     {
         // Talking between processes
+        ipc.on("copy-clipboard-item", (event, args) => 
+        {   
+            log.info("copy-clipboard-item" + args[0]);
+            if(args.length > 0) 
+            {
+                clipboard.writeText(args[0]);
+            }
+        });
     }
 
     _watchSystemClipboard() 
